@@ -15,7 +15,7 @@ import {
 } from "@rainbow-me/rainbowkit/wallets";
 import {  QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type Chain } from "viem";
-import { WagmiProvider } from "wagmi";
+import { cookieStorage, createStorage, WagmiProvider } from "wagmi";
 
 
 const { wallets } = getDefaultWallets();
@@ -46,6 +46,9 @@ export const config = getDefaultConfig({
       wallets: [argentWallet, trustWallet, ledgerWallet],
     },
   ],
+  storage: createStorage({
+    storage: cookieStorage,
+  }),
   chains: [Kai],
   ssr: true,
 });

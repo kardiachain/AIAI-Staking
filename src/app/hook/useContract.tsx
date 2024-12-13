@@ -1,5 +1,6 @@
 import { readContract } from '@wagmi/core'
 import { config } from '../providers';
+import { CONTRACT_ABI } from '../config/abis';
 
 export default function useContract(address: string) {
   const getCurrentKaiStake = async () => {

@@ -3,35 +3,25 @@ import Image from "next/image";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { config } from "../providers";
-import { getTransactionReceipt, readContract, writeContract } from '@wagmi/core'
+import { getTransactionReceipt, writeContract } from '@wagmi/core'
 import { useEffect, useState } from "react";
-
-
+import { CONTRACT_ABI } from "../config/abis";
+import { useStakedBalance } from "../hook/useStakedBalance";
+import { useStake } from "../hook/useStake";
+import { formatAddress } from "../utils/string";
 
 
 export default function Home() {
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
   const { disconnect } = useDisconnect();
-  const [currentKaiStake, setCurrentKaiStake] = useState<number>(0);
+
+  const {data: currentKaiStake, refetch} = useStakedBalance()
+  const {mutateAsync: stake} = useStake()
+
   const [stakeAmount, setStakeAmount] = useState<number>(0);
   const [unstakeRequested, setUnstakeRequested] = useState(false);
   const [unstakeTime, setUnstakeTime] = useState<number | null>(null);
-
-  const formatAddress = (address: string): string =>
-    `${address.slice(0, 6)}...${address.slice(-4)}`;
-
-  const getCurrentKaiStake = async () => {
-    const result: any = await readContract(config, {
-      address: `0xc04AA462b6fCC1e1cf6DB8bfAAa89fa13C63201E`,
-      abi: CONTRACT_ABI,
-      functionName: "getStake",
-      args: [address as `0x${string}`],
-    });
-    console.log('result: ', result[0]);
-    const formattedStake = Number(result[0]) / 1e18;
-    return setCurrentKaiStake(formattedStake);
-  };
+  
   const stakeKai = async () => {
     console.log('stakeAmount: ', stakeAmount);
 
@@ -40,16 +30,8 @@ export default function Home() {
       return;
     }
     try {
-      const result: any = await writeContract(config,{
-        address: `0xc04AA462b6fCC1e1cf6DB8bfAAa89fa13C63201E`,
-        abi: CONTRACT_ABI,
-        functionName: "stake",
-        value: BigInt(stakeAmount * 1e18), // Chuyển số KAI sang wei (1 KAI = 10^18 wei)
-        args: [],
-        
-      });
-      console.log("Stake result: ", result);
-      await getCurrentKaiStake(); // Cập nhật số dư stake sau khi thực hiện
+      await stake(stakeAmount.toString())
+      await refetch()
     } catch (error) {
       console.error("Error staking KAI: ", error);
     }
@@ -69,13 +51,6 @@ export default function Home() {
       hash: txHash,
     });
   };
-
-  useEffect(() => {
-    if(address) {
-      getCurrentKaiStake();
-    }
-    console.log(currentKaiStake,"current")
-  }, [address]);
 
   useEffect(() => {
     if (unstakeTime) {
@@ -113,7 +88,7 @@ export default function Home() {
         <p className="text-lg font-bold mb-4">
           Connected Wallet: {formatAddress(address || "")}
         </p>
-        <p className="mb-4">Current Staked KAI:{currentKaiStake ? currentKaiStake.toFixed(4) : "0"}</p>
+        <p className="mb-4">Current Staked KAI:{currentKaiStake}</p>
         <div className="grid gap-4">
           <input
             type="number"

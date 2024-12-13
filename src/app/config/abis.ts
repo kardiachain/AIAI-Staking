@@ -1,4 +1,4 @@
-const CONTRACT_ABI = [
+export const CONTRACT_ABI = [
     {
       type: "function",
       stateMutability: "view",
